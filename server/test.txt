@@ -1,0 +1,17 @@
+INTEGRASI
+
+install :- concurently
+
+SERVER:
+
+package.json -> script: 
+“client” : “npm start —prefix ../client”
+“dev” : “ concurrently \”npm start\” \” npm run client \” ” 
+
+run server & client:
+"npm dev"
+
+
+CLIENT:
+
+add config to client
