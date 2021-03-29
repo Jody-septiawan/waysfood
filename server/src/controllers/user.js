@@ -48,7 +48,7 @@ exports.getUser = async (req, res) => {
     try {
         const id = req.params.id;
 
-        const users = await user.findAll({
+        const users = await user.findOne({
             attributes: {
                 exclude: ["createdAt", "updatedAt", "password", "gender"],
             },

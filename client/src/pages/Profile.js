@@ -1,12 +1,17 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../App.css';
 import { Container, Row, Col, Modal } from 'react-bootstrap';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 
 import { CartContext } from "../contexts/cartContext";
 import { UserContext } from "../contexts/userContext";
 
-import { useHistory } from 'react-router-dom';
+import { useHistory, Link } from 'react-router-dom';
+
+import { API } from "../config/api";
+import { useQuery } from "react-query";
+
+import CardHistoryOrder from '../components/CardHistoryOrder';
 
 function Profile() {
     let history = useHistory();
@@ -24,6 +29,19 @@ function Profile() {
         history.push('/edit-profile');
     }
 
+    const { data: dataMyTransaction, loading, error, refetch } = useQuery(
+        "myTransactionCache",
+        async () => {
+            const response = await API.get("my-transactions");
+            return response;
+        }
+    );
+
+    const MyTransaction = dataMyTransaction?.data?.data?.transaction;
+
+    const toTransaction = (e) => {
+        history.push('/Transaction/' + e);
+    }
     return (
         <>
             <Container className="my-5 py-5">
@@ -61,27 +79,10 @@ function Profile() {
                         <div className="playfair text-header-profile mb-4">
                             History Order
                         </div>
-                        {stateCartDetail?.transaction.map((item, index) =>
-                            <div className="card mb-1" key={index}>
-                                <div className="card-body py-2">
-                                    <div className="box-2-column-text">
-                                        <div className="">
-                                            <div className="playfair mb-2"><b>{item.name}</b></div>
-                                            <div>{item.date}</div>
-                                            <div className="text-rest mt-3"><b>Total : Rp {item.total}</b></div>
-                                        </div>
-                                        <div className="ml-3 text-right d-block">
-                                            <img src="../assets/icon.png" />
-                                            <div className="mt-4">
-                                                <span className="bg-finished px-4 py-1 rounded">{item.status}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                        }
-                        {stateCartDetail.transaction.length == 0 && <i className="text-muted">No History Order</i>}
+                        {MyTransaction?.map((item, index) =>
+                            <CardHistoryOrder toTransaction={toTransaction} item={item} index={index} />
+                        )}
+                        {MyTransaction?.length == 0 && <i className="text-muted">No History Order</i>}
                     </Col>
                 </Row>
             </Container>

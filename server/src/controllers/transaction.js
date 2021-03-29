@@ -3,18 +3,21 @@ const { product, user, order, transaction } = require("../../models/");
 
 exports.addTransaction = async (req, res) => {
     try {
-        const orderData = req.body;
+        const orderData = req.body.body;
         const userId = req.userId.id;
-        const partnerId = 4;
+        const partnerId = req.body.parentId;
+        const price = req.body.price;
 
-        // const data2 = order.bulkCreate(data, { individualHooks: true });
         var d = new Date();
+        // var date = d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
         var date = d.toString();
+
         const dataTransaction = {
             userId,
             partnerId,
             date,
-            status: "on the way"
+            price,
+            status: "waiting"
         }
 
         var transId = await transaction.create(dataTransaction);
@@ -62,8 +65,9 @@ exports.addTransaction = async (req, res) => {
             }
         });
 
-        res.send({
-            transactionData,
+        res.status(200).send({
+            // transactionData,
+            transId,
         })
 
     } catch (err) {
@@ -71,6 +75,7 @@ exports.addTransaction = async (req, res) => {
         res.status(500).send({
             status: "error",
             message: "Server Error",
+            error: err
         });
     }
 }
@@ -80,6 +85,9 @@ exports.getTransactions = async (req, res) => {
         const PartnerId = req.params.id;
 
         const dataTransactionPartner = await transaction.findAll({
+            order: [
+                ['id', 'DESC'],
+            ],
             include: [
                 {
                     model: user,
@@ -103,7 +111,7 @@ exports.getTransactions = async (req, res) => {
                 },
             ],
             attributes: {
-                exclude: ["createdAt", "updatedAt", "date", "userId"],
+                exclude: ["createdAt", "updatedAt", "date"],
             },
             where: {
                 PartnerId
@@ -126,7 +134,7 @@ exports.getDetailTransaction = async (req, res) => {
     try {
         const transactionId = req.params.id;
 
-        const dataDetailTransaction = await transaction.findAll({
+        const dataDetailTransaction = await transaction.findOne({
             include: [{
                 model: user,
                 attributes: {
@@ -275,20 +283,40 @@ exports.getUserTransaction = async (req, res) => {
         const id = req.userId.id;
 
         const MyTransaction = await transaction.findAll({
-            include: {
-                model: order,
-                include: {
-                    model: product,
+            order: [
+                ['id', 'DESC'],
+            ],
+            include: [
+                {
+                    model: user,
                     attributes: {
-                        exclude: ["createdAt", "updatedAt"],
+                        exclude: [
+                            "createdAt",
+                            "updatedAt",
+                            "phone",
+                            "password",
+                            "location",
+                            "popular",
+                            "gender",
+                            "image"
+                        ],
                     },
                 },
-                attributes: {
-                    exclude: ["createdAt", "updatedAt", "transactionId", "id", "productId"],
-                },
-            },
+                {
+                    model: order,
+                    include: {
+                        model: product,
+                        attributes: {
+                            exclude: ["createdAt", "updatedAt"],
+                        },
+                    },
+                    attributes: {
+                        exclude: ["createdAt", "updatedAt", "transactionId", "id", "productId"],
+                    },
+                }
+            ],
             attributes: {
-                exclude: ["createdAt", "updatedAt", "userId", "partnerId", "date"],
+                exclude: ["createdAt", "updatedAt", "userId"],
             },
             where: {
                 userId: id

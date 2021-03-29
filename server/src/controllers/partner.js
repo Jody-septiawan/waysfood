@@ -75,7 +75,7 @@ exports.getDetailProduct = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const productDetail = await product.findAll({
+        const productDetail = await product.findOne({
             include: [
                 {
                     model: user,

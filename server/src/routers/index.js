@@ -49,7 +49,7 @@ router.post("/register", uploadFileUser("imageFile"), register);
 router.get("/check-auth", auhtenticated, checkAuth);
 
 //  Admin
-router.get("/users", auhtenticated, checkRoleAdmin, getUsers);
+router.get("/users", auhtenticated, getUsers);
 router.get("/partners", getPartners);
 router.delete("/user/:id", auhtenticated, checkRoleAdmin, deleteUser);
 

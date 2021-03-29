@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Cart.css';
 import { Container, Row, Col, Modal } from 'react-bootstrap';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 
 import { CartContext } from "../contexts/cartContext";
 import { UserContext } from "../contexts/userContext";
@@ -11,25 +11,24 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faMinus, faMap, faMapMarker, faShoppingCart } from '@fortawesome/free-solid-svg-icons'
 
 import { Link, useHistory } from 'react-router-dom';
+import { useMutation, useQuery } from "react-query";
 
-// MapBox
-import ReactMapGL from 'react-map-gl';
+import SweetAlert from 'sweetalert2-react';
+import { API } from "../config/api";
+import MapCart from '../components/MapCart';
+import axios from "axios";
+import Rupiah from '../components/Rupiah';
 
 function CartOrder() {
 
+    const [stateUser, dispatchUser] = useContext(UserContext);
     const [stateCartDetail, dispatchCartDetail] = useContext(CartContext);
-
+    const [modalConfirm, setModalConfirm] = useState(false);
     let history = useHistory();
 
-    const [viewport, setViewport] = useState({
-        latitude: -7.803656578063965,
-        longitude: 110.36375427246094,
-        width: '100%',
-        height: '80vh',
-        zoom: 15
-    });
-
-    const Token = "pk.eyJ1Ijoiam9keXNlcHRpYXdhbiIsImEiOiJja204bHN3dGQxOTI0MnZydHR2Z2pmZWRuIn0.-BxbTvANWOYx-7gmCMDtHw";
+    if (stateCartDetail.restaurant == null) {
+        history.push('/');
+    }
 
     const IncOrder = (item) => {
         dispatchCartDetail({
@@ -61,7 +60,7 @@ function CartOrder() {
 
     for (var i = 0; i < QtyOrder; i++) {
         var TmpSubTotal = 0;
-        TmpSubTotal = stateCartDetail.carts[i].harga * stateCartDetail.carts[i].qty
+        TmpSubTotal = stateCartDetail.carts[i].price * stateCartDetail.carts[i].qty
         SubTotal = SubTotal + TmpSubTotal;
         JmlOrder = JmlOrder + stateCartDetail.carts[i].qty;
     }
@@ -79,14 +78,39 @@ function CartOrder() {
 
     const itemOrder = {
         status: 'finished',
-        name: stateCartDetail.restaurant.nama,
+        name: stateCartDetail?.restaurant?.nama,
         date: d.getHours() + ':' + d.getMinutes() + ' ' + d.getDate() + '-' + (d.getMonth() + 1) + '-' + d.getFullYear(),
         total: Total
     }
 
-    const order = () => {
-        handleShowO();
-    }
+    const order = useMutation(async () => {
+        const dataProduct = stateCartDetail.carts;
+
+        const dataProductString = JSON.stringify(dataProduct);
+        const dataProductObject = JSON.parse(dataProductString);
+
+        const config = {
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+
+        let body = dataProductObject.map((item) => ({
+            productId: item.id,
+            qty: item.qty
+        })
+        );
+
+        const parentId = stateCartDetail.restaurant.id;
+        body = {
+            body,
+            parentId,
+            price: Total
+        }
+        await API.post("/transaction", body, config);
+        // handleShowO();
+        finish();
+    });
 
     const waiting = () => {
         var element = document.getElementById("Waiting");
@@ -95,14 +119,35 @@ function CartOrder() {
         element.classList.remove("d-none");
     }
 
-    const finish = (item) => {
-        handleCloseO();
+    const finish = () => {
         dispatchCartDetail({
             type: "ADD_ORDER",
-            payload: item
         });
         history.push('/profile')
     }
+
+    const addOrder = () => {
+        history.push('/menus');
+    }
+
+
+    let { data: MyData, loading, error, refetch } = useQuery(
+        "myDataCache",
+        async () => {
+            const response = await API.get("user/" + stateUser.user.id);
+            return response;
+        }
+    );
+
+    MyData = MyData?.data?.data;
+
+    const [locationName, setLocationName] = useState('...');
+    useEffect(() => {
+        axios.get("https://api.mapbox.com/geocoding/v5/mapbox.places/" + MyData?.location + ".json?types=poi&access_token=pk.eyJ1Ijoiam9keXNlcHRpYXdhbiIsImEiOiJja204bHN3dGQxOTI0MnZydHR2Z2pmZWRuIn0.-BxbTvANWOYx-7gmCMDtHw")
+            .then(res => {
+                setLocationName(res?.data?.features[0]?.place_name);
+            });
+    }, [MyData?.location]);
 
     if (QtyOrder == 0) {
         return (
@@ -119,18 +164,18 @@ function CartOrder() {
                 <Row>
                     <Col md={12}>
                         <div className="text-dark playfair header-content mt-5 mb-4">
-                            {stateCartDetail.restaurant.nama}
+                            {stateCartDetail.restaurant.fullname}
                         </div>
                         <div className="text-rest mb-1">
                             Delivery Location
-                    </div>
+                        </div>
                     </Col>
                 </Row>
                 <Row>
                     <Col md={9}>
                         <div className="text-rest mb-1 bg-light py-2 px-3 rounded">
-                            Yogyakarta
-                    </div>
+                            {locationName}
+                        </div>
                     </Col>
                     <Col md={3}>
                         <button onClick={handleShowM} className="btn btn-sm btn-dark px-5 btn-order-cart py-2 btn-block">Select On Map <FontAwesomeIcon icon={faMap} /> </button>
@@ -148,10 +193,10 @@ function CartOrder() {
                             <div key={item.id}>
                                 <Row className="py-2">
                                     <Col xs={3}>
-                                        <img src={item.img} className="img-carts" />
+                                        <img src={item.image} className="img-carts bg-light rounded" />
                                     </Col>
                                     <Col xs={6}>
-                                        <div className="playfair text-nama-menu-cart mt-3">{item.nama}</div>
+                                        <div className="playfair text-nama-menu-cart mt-3">{item.title}</div>
                                         <div className="mt-2">
                                             {item.qty > 1 &&
                                                 <FontAwesomeIcon icon={faMinus} onClick={() => DecOrder(item)} className="text-rest icon-click" />
@@ -163,7 +208,7 @@ function CartOrder() {
                                     <Col xs={3}>
                                         <div className="text-danger text-right mt-3">
                                             <div>
-                                                Rp. {item.harga}
+                                                Rp. <Rupiah nominal={item.price} />
                                             </div>
                                             <div className="mt-2">
                                                 <img src='../assets/trash.png' onClick={() => DeleteOrder(item)} className="img-trash-cart icon-click" />
@@ -175,6 +220,7 @@ function CartOrder() {
                             </div>
                         )
                         }
+                        {/* <pre>{JSON.stringify(stateCartDetail.restaurant.fullname, null, 2)}</pre> */}
                     </Col>
                     <Col md={5}>
                         <div className="line-cart my-2"></div>
@@ -185,9 +231,9 @@ function CartOrder() {
                                 <div className="mb-3">Ongkir</div>
                             </Col>
                             <Col xs={6}>
-                                <div className="mb-2 mt-3 text-right text-danger">Rp {SubTotal}</div>
+                                <div className="mb-2 mt-3 text-right text-danger">Rp <Rupiah nominal={SubTotal} /></div>
                                 <div className="mb-2 text-right">{JmlOrder}</div>
-                                <div className="mb-3 text-right text-danger">Rp {QtyOrder != 0 ? 10000 : 0}</div>
+                                <div className="mb-3 text-right text-danger">Rp <Rupiah nominal={QtyOrder != 0 ? 10000 : 0} /></div>
                             </Col>
                         </Row>
                         <div className="line-cart mt-2"></div>
@@ -196,10 +242,14 @@ function CartOrder() {
                                 <div className="mb-2 mt-1 text-total-pembayaran-cart">Total</div>
                             </Col>
                             <Col xs={6}>
-                                <div className="mb-2 mt-1 text-right text-danger text-total-pembayaran-cart">Rp {Total == 10000 ? 0 : Total}</div>
+                                <div className="mb-2 mt-1 text-right text-danger text-total-pembayaran-cart">Rp <Rupiah nominal={Total == 10000 ? 0 : Total} /> </div>
                             </Col>
                             <Col xs={12} className="text-right">
-                                <button onClick={order} className="btn btn-sm btn-dark px-5 btn-order-cart mt-5">Order</button>
+                                <button onClick={addOrder} className="btn btn-sm btn-secondary px-3 mt-5 mr-2">Add Order</button>
+                                <button onClick={() => setModalConfirm(true)} className="btn btn-sm btn-dark px-5 btn-order-cart mt-5">{order?.isLoading ? (
+                                    <div class="spinner-border text-light spinner-border-sm" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>) : 'Order'}</button>
                             </Col>
                         </Row>
                     </Col>
@@ -208,41 +258,30 @@ function CartOrder() {
                 <Modal show={showM} size="xl" onHide={handleCloseM} centered>
                     <Modal.Body className="">
 
-                        <ReactMapGL {...viewport} onViewportChange={viewmport => { setViewport(viewmport); }} mapStyle="mapbox://styles/jodyseptiawan/ckm8u2216elzw17rziiaoor6g" mapboxApiAccessToken={Token}>
-
-                            <span className="box-map card-maps mb-auto mx-auto card bg-light py-2 px-3 rounded m-2 border border-success">
-                                <small className="mb-2"><b>Select Delivery Location</b></small>
-                                <span className="text-danger d-inline"><FontAwesomeIcon icon={faMapMarker} className="text-danger d-inline mr-1" />Yogyakarta</span>
-                                <button onClick={handleCloseM} className="btn btn-sm btn-dark px-5 btn-order-cart btn-block py-1 mt-3">Confirm Location </button>
-                            </span>
-
-                        </ReactMapGL>
+                        <MapCart handleCloseM={handleCloseM} />
 
                     </Modal.Body>
                 </Modal>
 
-                <Modal show={showO} size="xl" onHide={handleCloseO} centered>
-                    <Modal.Body>
-                        <ReactMapGL className="img-fluid" {...viewport} onViewportChange={viewmport => { setViewport(viewmport); }} mapStyle="mapbox://styles/jodyseptiawan/ckm8u2216elzw17rziiaoor6g" mapboxApiAccessToken={Token}>
-
-                            <span id="Waiting" onClick={waiting} className="box-map card-maps ml-auto card bg-light py-2 px-3 rounded m-2 border border-success icon-click">
-                                <small className="mb-2"><b>Waiting for the transaction to be approved</b></small>
-                                <span className="text-danger d-inline"><FontAwesomeIcon icon={faMapMarker} className="text-danger d-inline mr-1" />Yogyakarta</span>
-                                <small className="mt-3"><b>Delivery Time</b></small>
-                                <span>10 - 15 Minutes</span>
-                            </span>
-
-                            <span id="Finish" className="box-map card-maps ml-auto card bg-light py-2 px-3 rounded m-2 border border-success d-none">
-                                <small className="mb-2"><b>Driver is On The Way</b></small>
-                                <span className="text-danger d-inline"><FontAwesomeIcon icon={faMapMarker} className="text-danger d-inline mr-1" />Yogyakarta</span>
-                                <small className="mt-3"><b>Delivery Time</b></small>
-                                <span>10 - 15 Minutes</span>
-                                <button onClick={() => finish(itemOrder)} className="btn btn-sm btn-dark px-5 btn-order-cart btn-block py-1 mt-3">Finished Order</button>
-                            </span>
-
-                        </ReactMapGL>
-                    </Modal.Body>
-                </Modal>
+                <SweetAlert
+                    type={'question'}
+                    show={modalConfirm}
+                    title="Confirm order"
+                    onConfirm={() => {
+                        console.log('confirm');
+                        order.mutate();
+                        setModalConfirm(false);
+                    }}
+                    confirmButtonText='Yes'
+                    confirmButtonColor='#3085d6'
+                    showCancelButton
+                    onCancel={() => {
+                        console.log('cancel');
+                        setModalConfirm(false);
+                    }}
+                    cancelButtonColor='red'
+                    onEscapeKey={() => setModalConfirm(false)}
+                />
             </Container >
         )
     }

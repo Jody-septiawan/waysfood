@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Row, Col, Navbar, Nav, Button, Modal, Form } from 'react-bootstrap';
 
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 
 import { useHistory } from 'react-router-dom';
 import DataUser from '../components/userData';
@@ -57,18 +57,18 @@ function PopularRest() {
     const handleShowR = () => setShowR(true);
 
     const SelectRest = (e) => {
-        // console.log('SelectRest', e);
         if (!state.isLogin) {
-            // e.stopPropagation();
             setShowL(true);
         } else {
-            history.push('/menus/' + e.id)
+            console.log(e);
             dispatchCartRNY({
                 type: "ADD_RESTAURANT",
                 payload: e
             });
+            history.push('/menus');
         }
     }
+
 
     const handleLogin = (e) => {
         e.preventDefault();
@@ -106,7 +106,6 @@ function PopularRest() {
         setShowR(true);
     };
 
-
     const handleRegis = (e) => {
         e.preventDefault()
         let emailData = e.target.elements.email.value;
@@ -128,14 +127,12 @@ function PopularRest() {
     }
 
     const { data: PartnersData, loading, error, refetch } = useQuery(
-        "userCache",
+        "PartnersDataCache",
         async () => {
             const response = await API.get("partners");
             return response;
         }
     );
-
-    // console.log(PartnersData);
 
     return (
         <div>
@@ -173,6 +170,7 @@ function PopularRest() {
                     <p className="text-muted text-center mt-3">Don't have an account ? Klik <a href="#" onClick={handleShowR2} className="text-dark">Here</a></p>
                 </Modal.Body>
             </Modal>
+
             <Modal show={showR} onHide={handleCloseR} centered>
                 <Modal.Body className="mx-3">
                     <div className="register-header mb-4">Register</div>

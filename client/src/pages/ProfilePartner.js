@@ -16,7 +16,11 @@ function Profile() {
 
     console.log('User:', stateUserLogin);
 
-    const imgSquare = stateUserLogin.user.imgSquare;
+    let imgSquare = '/assets/partner-square.png';
+
+    if (stateUserLogin?.user?.image) {
+        imgSquare = stateUserLogin?.user?.image;
+    }
 
     const EditProfile = () => {
         history.push('/edit-profile-partner');
@@ -31,7 +35,7 @@ function Profile() {
                             Profile Partner
                         </div>
                         <div className="box-img-text">
-                            <img src={imgSquare} className="rounded" />
+                            <img src={imgSquare} className="rounded img-square" />
                             <span className="ml-3">
                                 <div className="h5 text-rest mb-4">
                                     Full Name
@@ -57,24 +61,11 @@ function Profile() {
                     </Col>
                     <Col xs={6}>
                         <div className="playfair text-header-profile mb-4">
-                            History Order
+                            History Transaction
                         </div>
-                        <div className="card mb-1">
-                            <div className="card-body py-3">
-                                <div className="box-2-column-text">
-                                    <div className="">
-                                        <div className="playfair mb-2"><b>Andi</b></div>
-                                        <div>12 March 2021</div>
-                                        <div className="text-rest mt-3"><b>Total : Rp 45.000</b></div>
-                                    </div>
-                                    <div className="ml-3 text-right d-block">
-                                        <img src="../assets/icon.png" />
-                                        <div className="mt-4">
-                                            <span className="bg-finished px-4 py-1 rounded">Finished</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <img src="../assets/ilustrasi/no-data.svg" className="img-fluid img-no-history" />
+                        <div className="mb-1 text-center text-muted">
+                            <i>No History Order</i>
                         </div>
                     </Col>
                 </Row>

@@ -10,13 +10,18 @@ import { faPlus, faMinus, faMap, faMapMarker, faShoppingCart, faUpload } from '@
 
 import ReactMapGL from 'react-map-gl';
 
+import { API } from "../config/api";
+import { useQuery } from "react-query";
+import MapEditProfile from '../components/MapEditProfile';
+import axios from "axios";
+
 function EditProfile() {
 
     const [stateUser, dispatchUser] = useContext(UserContext);
 
     const [viewport, setViewport] = useState({
-        latitude: stateUser.user.location.latitude,
-        longitude: stateUser.user.location.longitude,
+        latitude: -7.803656578063965,
+        longitude: 110.36375427246094,
         width: '100%',
         height: '80vh',
         zoom: 15
@@ -58,6 +63,27 @@ function EditProfile() {
         const aaaaaa = 1;
     }
 
+
+    let { data: MyUserData, loading, error, refetch } = useQuery(
+        "myPartnerDataCache",
+        async () => {
+            const response = await API.get("user/" + stateUser.user.id);
+            return response;
+        }
+    );
+
+    MyUserData = MyUserData?.data?.data;
+
+    const [alamat, setAlamat] = useState('-');
+    useEffect(() => {
+        if (MyUserData?.location) {
+            axios.get("https://api.mapbox.com/geocoding/v5/mapbox.places/" + MyUserData?.location + ".json?types=poi&access_token=pk.eyJ1Ijoiam9keXNlcHRpYXdhbiIsImEiOiJja204bHN3dGQxOTI0MnZydHR2Z2pmZWRuIn0.-BxbTvANWOYx-7gmCMDtHw")
+                .then(res => {
+                    setAlamat(res?.data?.features[0]?.place_name);
+                });
+        }
+    }, [MyUserData?.location]);
+
     return (
         <>
             <Container className="py-5 my-5">
@@ -70,7 +96,7 @@ function EditProfile() {
                             <Form className="register edit-data-user" onSubmit={HandleEditProfile}>
                                 <div className="box-edit-profile-grid">
                                     <div className="mr-1">
-                                        <input name="name" onChange={HandleEditProfile} value={stateUser.user.name} type="text" placeholder="Full Name" className="form-control" />
+                                        <input name="name" onChange={HandleEditProfile} value={MyUserData?.fullname} type="text" placeholder="Full Name" className="form-control" />
                                     </div>
                                     <input type="file" id="upload" hidden />
                                     <label for="upload">
@@ -88,14 +114,14 @@ function EditProfile() {
                                     </div> */}
                                 </div>
                                 <div className="input-group pt-2">
-                                    <input name="email" type="text" value={stateUser.user.email} placeholder="Email" className="form-control" />
+                                    <input name="email" type="text" value={MyUserData?.email} placeholder="Email" className="form-control" />
                                 </div>
                                 <div className="input-group pt-2">
-                                    <input name="phone" type="text" value={stateUser.user.phone} placeholder="Phone" className="form-control" />
+                                    <input name="phone" type="text" value={MyUserData?.phone} placeholder="Phone" className="form-control" />
                                 </div>
                                 <div className="box-edit-profile-grid pt-2">
                                     <div className="mr-1">
-                                        <input name="address" type="text" value={stateUser.user.location.address} placeholder="Location" className="form-control" />
+                                        <input name="address" value={alamat} type="text" placeholder="Location" className="form-control" />
                                     </div>
                                     <div className="custom-file">
                                         <button type="button" onClick={handleShow} className="btn btn-dark btn-sm btn-order-cart btn-block py-2">Select On Map <FontAwesomeIcon icon={faMap} /> </button>
@@ -108,13 +134,11 @@ function EditProfile() {
                         </div>
                     </Col>
                 </Row>
-                <pre>{JSON.stringify(DataEditProfile, null, 2).length != 2 && JSON.stringify(DataEditProfile, null, 2)}</pre>
+                {/* <pre>{JSON.stringify(MyUserData, null, 2)}</pre> */}
             </Container>
             <Modal show={show} size="xl" onHide={handleClose} centered>
                 <Modal.Body className="">
-                    <ReactMapGL className="img-fluid" {...viewport} onViewportChange={viewmport => { setViewport(viewmport); }} mapStyle="mapbox://styles/jodyseptiawan/ckm8u2216elzw17rziiaoor6g" mapboxApiAccessToken={Token}>
-
-                    </ReactMapGL>
+                    <MapEditProfile handleClose={handleClose} />
                 </Modal.Body>
             </Modal>
         </>

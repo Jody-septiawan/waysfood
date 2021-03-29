@@ -80,11 +80,6 @@ const reducer = (state, action) => {
                 ...state,
                 carts: [],
                 restaurant: null,
-                transaction: [
-                    ...state.transaction, {
-                        ...payload,
-                    },
-                ],
             };
         default:
             throw new Error();

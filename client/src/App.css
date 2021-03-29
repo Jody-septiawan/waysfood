@@ -111,6 +111,10 @@ body{
   /* cursor: pointer; */
 }
 
+.text-decoration-none{
+  text-decoration: none !important;
+}
+
 .img-menus{
   height: 140px !important;
   min-width: 100%;
@@ -211,10 +215,6 @@ body{
   width: 180px;
 }
 
-.bg-finished{
-  background: #e8fff4;
-  color: #00FF47;
-}
 
 .btn-dropdown-after-login:focus{
   outline: none;
@@ -328,4 +328,50 @@ label{
 .img-add-product{
   width: 180px;
   height: 130px;
+}
+
+.text-max-lenght {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.not-allowed {
+  cursor: not-allowed !important;
+}
+
+
+.bg-finished{
+  background: #e8fff4;
+  color: #00FF47;
+}
+
+.bg-cancel{
+  background: #fff2e8;
+  color: #ff0000;
+}
+
+.bg-waiting{
+  background: #657054;
+  color: #e5ff00;
+}
+
+.bg-otw{
+  background: #e8e8ff;
+  color: #0400ff;
+}
+
+.img-square{
+  min-width: 180px !important;
+  min-height: 150px !important;
+}
+
+.img-no-history{
+  width: 70%;
+}
+
+.img-my-marker{
+  width: 9%;
 }

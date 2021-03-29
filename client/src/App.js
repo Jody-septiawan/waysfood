@@ -16,9 +16,10 @@ import IncomeTransaction from './pages/IncomeTransaction';
 import ProfilePartner from './pages/ProfilePartner';
 import EditProfilePartner from './pages/EditProfilePartner';
 import AddProduct from './pages/AddProduct';
+import Transaction from './pages/Transaction';
 
 import { API, setAuthToken } from "./config/api";
-import { useQuery } from "react-query";
+import PrivateRoute from "./components/PrivateRoute";
 
 if (localStorage.token) {
   setAuthToken(localStorage.token);
@@ -26,7 +27,7 @@ if (localStorage.token) {
 
 function App() {
   const [state, dispatch] = useContext(UserContext);
-  console.log("APP", state);
+  // console.log("APP", state);
   const checkUser = async () => {
     try {
       const response = await API.get("/check-auth");
@@ -64,33 +65,16 @@ function App() {
           <Navbar />
         </div>
         <Switch>
-          <Route path="/menus/:id">
-            <Menus />
-          </Route>
-          <Route path="/cart-order">
-            <CartOrder />
-          </Route>
-          <Route path="/profile">
-            <Profile />
-          </Route>
-          <Route path="/edit-profile">
-            <EditProfile />
-          </Route>
-          <Route path="/income-transaction">
-            <IncomeTransaction />
-          </Route>
-          <Route path="/profile-partner">
-            <ProfilePartner />
-          </Route>
-          <Route path="/edit-profile-partner">
-            <EditProfilePartner />
-          </Route>
-          <Route path="/add-product">
-            <AddProduct />
-          </Route>
-          <Route path="/">
-            <Landing />
-          </Route>
+          <PrivateRoute exact path="/menus" component={Menus} />
+          <PrivateRoute exact path="/profile" component={Profile} />
+          <PrivateRoute exact path="/cart-order" component={CartOrder} />
+          <PrivateRoute exact path="/add-product" component={AddProduct} />
+          <PrivateRoute exact path="/edit-profile" component={EditProfile} />
+          <PrivateRoute exact path="/Transaction/:id" component={Transaction} />
+          <PrivateRoute exact path="/profile-partner" component={ProfilePartner} />
+          <PrivateRoute exact path="/income-transaction" component={IncomeTransaction} />
+          <PrivateRoute exact path="/edit-profile-partner" component={EditProfilePartner} />
+          <Route exact path="/" component={Landing} />
         </Switch>
       </Router>
     </CartContextProvider>

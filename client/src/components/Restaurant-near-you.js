@@ -142,7 +142,7 @@ function RestNearYou() {
                     <Col md={12}>
                         <div data-aos="fade-up" data-aos-delay="250" className="text-dark playfair header-content mt-5 mb-3">
                             Restaurant Near You
-                        </div>
+                            </div>
                     </Col>
                     {PartnersData?.data?.data?.map((item) => (
                         item.popular == 0 &&
@@ -155,6 +155,7 @@ function RestNearYou() {
                             <CardRestaurant product={item} SelectRest={SelectRest} />
                         </Col>
                     )} */}
+                    {/* <pre>{JSON.stringify(PartnersData?.data?.data[0].popular, null, 2)}</pre> */}
                 </Row>
             </Container>
             <Modal show={showL} onHide={handleCloseL} centered>

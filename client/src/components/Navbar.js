@@ -13,25 +13,35 @@ import { CartContext } from "../contexts/cartContext";
 import { API, setAuthToken } from "../config/api";
 
 function NavbarComp() {
-
-    let { id } = useParams();
-
     let history = useHistory();
 
     const [state, dispatch] = useContext(UserContext);
     const [stateCart, dispatchCart] = useContext(CartContext);
 
-    const [Message, setMessage] = useState('');
-    const [showL, setShowL] = useState(false);
-    const [showR, setShowR] = useState(false);
+    const [Message, setMessage] = useState({});
     const [userRegis, setUserRegis] = useState({});
 
+    // MODAL ======================================================
+    const [showL, setShowL] = useState(false);
+    const [showR, setShowR] = useState(false);
     const handleCloseL = () => setShowL(false);
-    const handleShowL = () => setShowL(true);
     const handleCloseR = () => setShowR(false);
-    const handleShowR = () => setShowR(true);
 
-    // LOGIN
+    const handleShowL = () => {
+        // e.preventDefault();
+        setShowL(true);
+        setShowR(false);
+    }
+
+    const handleShowR = () => {
+        // e.preventDefault();
+        setShowL(false);
+        setShowR(true);
+    };
+    // Akhir MODAL ======================================================
+
+    // AUTH ======================================================
+    // Login
     const [form, setForm] = useState({});
 
     const { emailLoginData, passwordLoginData } = form;
@@ -67,29 +77,21 @@ function NavbarComp() {
             setAuthToken(response.data.data.user.token);
             history.push("/");
 
-            // console.log(response.data);
-
+            // console.log("RESPONSE LOGIN", response.data);
+            setMessage(null);
+            setForm({
+                emailLoginData: '',
+                passwordLoginData: ''
+            });
         } catch (error) {
+            if (error) {
+                setMessage({
+                    status: 'failed',
+                    message: 'Login Failed'
+                });
+            }
             console.log(error);
         }
-
-        // let emailLData = e.target.elements.emailLogin.value;
-        // let passwordLData = e.target.elements.passwordLogin.value;
-
-        // var dataLogin = false;
-
-        // dataLogin = DataUser.find(
-        //     (user) => user.email === emailLData
-        // );
-
-        // if (dataLogin) {
-        //     dispatch({
-        //         type: "LOGIN_SUCCESS",
-        //         payload: dataLogin
-        //     });
-        // } else {
-        //     setMessage('Email tidak ditemukan')
-        // }
     }
 
     const Logout = (e) => {
@@ -100,37 +102,64 @@ function NavbarComp() {
         history.push('/')
     }
 
-    const handleShowL2 = (e) => {
-        e.preventDefault();
-        setShowL(true);
-        setShowR(false);
-    }
+    // Register
+    const [formResgiter, setFormResgiter] = useState({
+        email: '',
+        fullname: '',
+        password: '',
+        gender: '',
+        phone: '',
+        role: ''
+    })
 
-    const handleShowR2 = (e) => {
-        e.preventDefault();
-        setShowL(false);
-        setShowR(true);
+    const { email,
+        fullname,
+        password,
+        gender,
+        phone,
+        role } = formResgiter;
+
+    const onChangeRegister = (e) => {
+        const tempForm = { ...formResgiter };
+        tempForm[e.target.name] = e.target.value;
+        setFormResgiter(tempForm);
     };
 
-    const handleRegis = (e) => {
-        e.preventDefault()
-        let emailData = e.target.elements.email.value;
-        let passwordData = e.target.elements.password.value;
-        let nameData = e.target.elements.name.value;
-        let genderData = e.target.elements.gender.value;
-        let phoneData = e.target.elements.phone.value;
-        let asData = e.target.elements.as.value;
+    const handleRegister = useMutation(async () => {
 
-        var dataUserRegis = {
-            email: emailData,
-            password: passwordData,
-            nama: nameData,
-            gender: genderData,
-            phone: phoneData,
-            as: asData
-        }
-        setUserRegis(dataUserRegis)
-    }
+        const body = new FormData();
+
+        body.append("email", email);
+        body.append("fullname", fullname);
+        body.append("password", password);
+        body.append("gender", gender);
+        body.append("phone", phone);
+        body.append("role", role);
+
+
+        const config = {
+            headers: {
+                "Content-Type": "application/json",
+            },
+        };
+
+        await API.post("/register", body, config);
+        handleShowL();
+        setFormResgiter({
+            email: '',
+            fullname: '',
+            password: '',
+            gender: '',
+            phone: '',
+            role: ''
+        });
+        setMessage({
+            status: 'success',
+            message: ''
+        });
+    });
+
+    // Akhir AUTH ======================================================
 
     const CartClick = (e) => {
         if (stateCart.carts.length == 0) {
@@ -138,7 +167,7 @@ function NavbarComp() {
         }
     }
 
-    let avatar = './assets/user.png';
+    let avatar = '../assets/user.png';
 
     if (state.isLogin && state.user.role == "PARTNER") {
         avatar = './assets/partner.png';
@@ -152,6 +181,17 @@ function NavbarComp() {
 
     for (var i = 0; i < stateCart.carts.length; i++) {
         JmlOrder = JmlOrder + stateCart.carts[i].qty;
+    }
+
+    // console.log("REGISSS", handleRegister.isSuccess);
+    let btnRegister = false;
+    if (email &&
+        fullname &&
+        password &&
+        gender &&
+        phone &&
+        role) {
+        btnRegister = true;
     }
 
     if (state.isLogin) {
@@ -239,11 +279,16 @@ function NavbarComp() {
 
                 <Modal show={showL} onHide={handleCloseL} centered>
                     <Modal.Body className="mx-3">
-                        <div className="register-header mb-4">Login</div>
-                        {Message ?
-                            <div className="alert alert-danger py-1 px-2">{Message}</div>
-                            : ''
+                        <div className="register-header mb-3">Login</div>
+                        {Message?.status == 'failed' &&
+                            <div className="alert alert-danger py-1 px-2">{Message.message}</div>
                         }
+                        {Message?.status == 'success' && (
+                            <div className="mb-3 alert alert-success px-2 py-2">
+                                <b className="py-1 px-0">Account successfully created</b> <br />
+                                <small className="py-1 px-0">Thank you for your registration! Your account is now ready to use.</small>
+                            </div>
+                        )}
                         <Form className="register" onSubmit={(e) => handleLogin(e)}>
                             <Form.Group controlId="exampleForm.ControlInput1L">
                                 <Form.Control value={emailLoginData}
@@ -255,39 +300,56 @@ function NavbarComp() {
                             </Form.Group>
                             <Button type="submit" className="btn btn-modal btn-warning text-light btn-block mt-4">Login</Button>
                         </Form>
-                        <p className="text-muted text-center mt-3">Don't have an account ? Klik <a href="#" onClick={handleShowR2} className="text-dark">Here</a></p>
+                        <p className="text-muted text-center mt-3">Don't have an account ? Klik <a href="#" onClick={handleShowR} className="text-dark">Here</a></p>
                     </Modal.Body>
                 </Modal>
 
                 <Modal className="modal-auth" centered show={showR} onHide={handleCloseR} >
                     <Modal.Body className="mx-3">
                         <div className="register-header mb-4">Register</div>
-                        <Form className="register" onSubmit={handleRegis}>
+                        {handleRegister?.error?.response?.data?.status == 'Register Failed' &&
+                            <div className="alert alert-danger py-1 px-2">{handleRegister?.error?.response?.data?.message}</div>
+                        }
+                        <Form className="register" onSubmit={(e) => { e.preventDefault(); handleRegister.mutate() }}>
                             <Form.Group controlId="exampleForm.ControlInput1">
-                                <Form.Control type="text" name="email" placeholder="Email" />
+                                <Form.Control value={email} onChange={(e) => onChangeRegister(e)} type="text" name="email" placeholder="Email" />
                             </Form.Group>
+
                             <Form.Group controlId="exampleForm.ControlInput2">
-                                <Form.Control type="password" name="password" placeholder="Password" />
+                                <Form.Control value={password} onChange={(e) => onChangeRegister(e)} type="password" name="password" placeholder="Password" />
                             </Form.Group>
+
                             <Form.Group controlId="exampleForm.ControlInput3">
-                                <Form.Control type="text" name="name" placeholder="Full Name" />
+                                <Form.Control value={fullname} onChange={(e) => onChangeRegister(e)} type="text" name="fullname" placeholder="Full Name" />
                             </Form.Group>
-                            <Form.Group controlId="exampleForm.ControlInput4">
-                                <Form.Control type="text" name="gender" placeholder="Gender" />
-                            </Form.Group>
-                            <Form.Group controlId="exampleForm.ControlInput5">
-                                <Form.Control type="text" name="phone" placeholder="Phone" />
-                            </Form.Group>
+
                             <Form.Group controlId="exampleForm.ControlSelect1">
-                                <Form.Control as="select" name="as">
-                                    <option value="user">As User</option>
-                                    <option value="partner">As Partner</option>
+                                <Form.Control as="select" name="gender" onChange={(e) => onChangeRegister(e)} required>
+                                    <option selected>Choose gender</option>
+                                    <option value="Male" >Male</option>
+                                    <option value="Female">Female</option>
                                 </Form.Control>
                             </Form.Group>
-                            <Button type="submit" className="btn btn-warning text-light btn-modal btn-block mt-4">Register</Button>
+
+                            <Form.Group controlId="exampleForm.ControlInput5">
+                                <Form.Control value={phone} onChange={(e) => onChangeRegister(e)} type="text" name="phone" placeholder="Phone" />
+                            </Form.Group>
+
+                            <Form.Group controlId="exampleForm.ControlSelect1">
+                                <Form.Control as="select" name="role" onChange={(e) => onChangeRegister(e)} required>
+                                    <option selected>Choose as</option>
+                                    <option value="USER" >As User</option>
+                                    <option value="PARTNER">As Partner</option>
+                                </Form.Control>
+                            </Form.Group>
+                            {btnRegister ?
+                                <Button type="submit" className="btn btn-warning text-light btn-modal btn-block mt-4">Register</Button>
+                                :
+                                <Button type="button" disabled={true} className="btn not-allowed text-light btn-secondary btn-block mt-4">Register</Button>
+                            }
                         </Form>
-                        <p className="text-muted text-center mt-3">Already have an account ?  Klik <a href="#" onClick={handleShowL2} className="text-dark">Here</a></p>
-                        <pre>{JSON.stringify(userRegis, null, 2).length != 2 && JSON.stringify(userRegis, null, 2)}</pre>
+                        <p className="text-muted text-center mt-3">Already have an account ?  Klik <a href="#" onClick={handleShowL} className="text-dark">Here</a></p>
+                        {/* <pre>{JSON.stringify(formResgiter, null, 2)}</pre> */}
                     </Modal.Body>
                 </Modal>
             </div >
